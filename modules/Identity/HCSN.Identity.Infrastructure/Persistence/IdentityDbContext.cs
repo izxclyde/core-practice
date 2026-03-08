@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using HCSN.Identity.Domain.Entities;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HCSN.Identity.Infrastructure.Persistence;
 
@@ -25,6 +26,28 @@ public class IdentityDbContext : DbContext
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
+
+        static ValueComparer<T> BuildJsonValueComparer<T>() where T : class, new()
+            => new(
+                (left, right) => JsonSerializer.Serialize(left, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(right, (JsonSerializerOptions?)null),
+                value => JsonSerializer.Serialize(value, (JsonSerializerOptions?)null).GetHashCode(),
+                value => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null) ?? new T());
+
+        static PropertyBuilder<TProperty> ConfigureJsonProperty<TProperty>(
+            PropertyBuilder<TProperty> property,
+            JsonSerializerOptions options,
+            ValueComparer<TProperty>? comparer = null)
+            where TProperty : class, new()
+        {
+            property
+                .HasColumnType("nvarchar(max)")
+                .HasConversion(
+                    value => JsonSerializer.Serialize(value, options),
+                    value => JsonSerializer.Deserialize<TProperty>(value, options) ?? new TProperty());
+
+            property.Metadata.SetValueComparer(comparer ?? BuildJsonValueComparer<TProperty>());
+            return property;
+        }
 
         // =========================
         // INVOICE (RELATIONAL)
@@ -63,61 +86,14 @@ public class IdentityDbContext : DbContext
             entity.Property(e => e.Status).HasConversion<int>();
 
             // JSON properties (SIMPLE conversion, NO OwnsOne)
-            var stringListComparer = new ValueComparer<List<string>>(
-                                    (c1, c2) => c1!.SequenceEqual(c2!),
-                                    c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                                    c => c.ToList());
-
-            entity.Property(e => e.Features)
-                .HasColumnType("nvarchar(max)")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions)
-                         ?? new Dictionary<string, object>());
-
-            entity.Property(e => e.Settings)
-                .HasColumnType("nvarchar(max)")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<TenantSettings>(v, jsonOptions)!);
-
-            entity.Property(e => e.Branding)
-                .HasColumnType("nvarchar(max)")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<TenantBranding>(v, jsonOptions)!);
-
-            entity.Property(e => e.SecurityPolicy)
-                .HasColumnType("nvarchar(max)")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<SecurityPolicy>(v, jsonOptions)!);
-
-            entity.Property(e => e.Limits)
-                .HasColumnType("nvarchar(max)")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<TenantLimits>(v, jsonOptions)!);
-
-            entity.Property(e => e.Billing)
-                .HasColumnType("nvarchar(max)")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<BillingInfo>(v, jsonOptions)!);
-
-            entity.Property(e => e.AllowedDomains)
-                .HasColumnType("nvarchar(max)")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<List<string>>(v, jsonOptions) ?? new List<string>())
-                .Metadata.SetValueComparer(stringListComparer);
-
-            entity.Property(e => e.Metadata)
-                .HasColumnType("nvarchar(max)")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions)
-                         ?? new Dictionary<string, string>());
+            ConfigureJsonProperty(entity.Property(e => e.Features), jsonOptions);
+            ConfigureJsonProperty(entity.Property(e => e.Settings), jsonOptions);
+            ConfigureJsonProperty(entity.Property(e => e.Branding), jsonOptions);
+            ConfigureJsonProperty(entity.Property(e => e.SecurityPolicy), jsonOptions);
+            ConfigureJsonProperty(entity.Property(e => e.Limits), jsonOptions);
+            ConfigureJsonProperty(entity.Property(e => e.Billing), jsonOptions);
+            ConfigureJsonProperty(entity.Property(e => e.AllowedDomains), jsonOptions);
+            ConfigureJsonProperty(entity.Property(e => e.Metadata), jsonOptions);
 
             // Relationships
             entity.HasMany(e => e.Users)
@@ -149,6 +125,21 @@ public class IdentityDbContext : DbContext
             entity.Property(e => e.Status).HasConversion<int>();
             entity.Property(e => e.UserType).HasConversion<int>();
 
+            ConfigureJsonProperty(entity.Property(e => e.AccessibleSystems), jsonOptions);
+            ConfigureJsonProperty(entity.Property(e => e.KnownDevices), jsonOptions);
+            ConfigureJsonProperty(entity.Property(e => e.TwoFactorRecoveryCodes), jsonOptions);
+
+            ConfigureJsonProperty(entity.Property<Dictionary<string, object>>("_customData"), jsonOptions)
+                .HasColumnName("CustomData");
+            ConfigureJsonProperty(entity.Property<Dictionary<string, string>>("_metadata"), jsonOptions)
+                .HasColumnName("Metadata");
+            ConfigureJsonProperty(entity.Property<List<string>>("_roles"), jsonOptions)
+                .HasColumnName("Roles");
+            ConfigureJsonProperty(entity.Property<List<string>>("_permissions"), jsonOptions)
+                .HasColumnName("Permissions");
+            ConfigureJsonProperty(entity.Property<List<string>>("_deviceTokens"), jsonOptions)
+                .HasColumnName("DeviceTokens");
+
             entity.HasQueryFilter(e => e.DeletedAt == null);
 
             entity.HasOne(u => u.Tenant)
@@ -167,12 +158,7 @@ public class IdentityDbContext : DbContext
             entity.Property(e => e.ModuleCode).IsRequired().HasMaxLength(100);
             entity.Property(e => e.ModuleName).IsRequired().HasMaxLength(200);
 
-            entity.Property(e => e.Configuration)
-                .HasColumnType("nvarchar(max)")
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, jsonOptions),
-                    v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions)
-                         ?? new Dictionary<string, object>());
+            ConfigureJsonProperty(entity.Property(e => e.Configuration), jsonOptions);
         });
     }
 
