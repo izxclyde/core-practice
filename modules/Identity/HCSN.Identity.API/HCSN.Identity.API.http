@@ -1,0 +1,6 @@
+@HCSN.Identity.API_HostAddress = http://localhost:5208
+
+GET {{HCSN.Identity.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

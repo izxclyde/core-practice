@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/modules/" />
+  <Folder Name="/modules/Identity/">
+    <Project Path="modules/Identity/HCSN.Identity.API/HCSN.Identity.API.csproj" />
+    <Project Path="modules/Identity/HCSN.Identity.Application/HCSN.Identity.Application.csproj" />
+    <Project Path="modules/Identity/HCSN.Identity.Domain/HCSN.Identity.Domain.csproj" />
+    <Project Path="modules/Identity/HCSN.Identity.Infrastructure/HCSN.Identity.Infrastructure.csproj" />
+    <Project Path="modules/Identity/HCSN.Identity.Public/HCSN.Identity.Public.csproj" />
+  </Folder>
+</Solution>
