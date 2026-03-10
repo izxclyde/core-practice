@@ -16,7 +16,7 @@ public interface IUserRepository
     Task AddAsync(User user);
     Task UpdateAsync(User user);
     Task SoftDeleteAsync(Guid id);
-    
+
     // New multi-tenant methods
     Task<List<User>> GetUsersByTenantAsync(Guid tenantId);
     Task<User?> GetByEmailAndTenantAsync(string email, Guid tenantId);

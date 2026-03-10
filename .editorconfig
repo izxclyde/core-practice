@@ -1,0 +1,2 @@
+csharpier_formatter = true
+csharpier_formatter_options = --max-width 120

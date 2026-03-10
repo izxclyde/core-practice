@@ -12,10 +12,10 @@ public record BaseRegisterRequest
     public string Password { get; init; } = string.Empty;
     public string? PhoneNumber { get; init; }
     public string? InvitationToken { get; init; }
-    
+
     // New: Support for additional metadata
     public Dictionary<string, object>? Metadata { get; init; }
-    
+
     // New: User preferences
     public UserPreferencesDto? Preferences { get; init; }
 }
@@ -25,7 +25,7 @@ public record TenantRegisterRequest : BaseRegisterRequest
 {
     // Can be subdomain or custom domain
     public string TenantIdentifier { get; init; } = string.Empty;
-    
+
     // Company information
     public string? CompanyName { get; init; }
     public string? Address { get; init; }
@@ -34,18 +34,18 @@ public record TenantRegisterRequest : BaseRegisterRequest
     public string? Country { get; init; }
     public string? ZipCode { get; init; }
     public string? VatNumber { get; init; }
-    
+
     // New: Custom fields based on tenant configuration
     public Dictionary<string, object>? CustomFields { get; init; }
-    
+
     // New: User role request (if applicable)
     public string? RequestedRole { get; init; }
-    
+
     // New: Terms acceptance
     public bool AcceptedTerms { get; init; }
     public bool AcceptedPrivacy { get; init; }
     public DateTime? TermsAcceptedAt { get; init; }
-    
+
     // New: Marketing preferences
     public bool SubscribeToNewsletter { get; init; }
     public bool AllowMarketingEmails { get; init; }
@@ -59,21 +59,22 @@ public record CreateTenantWithSettingsRequest
     public string Subdomain { get; init; } = string.Empty;
     public string? CustomDomain { get; init; }
     public TenantTypeDto Type { get; init; } = TenantTypeDto.Standard;
-    public TenantDeploymentModelDto DeploymentModel { get; init; } = TenantDeploymentModelDto.Shared;
-    
+    public TenantDeploymentModelDto DeploymentModel { get; init; } =
+        TenantDeploymentModelDto.Shared;
+
     // Settings
     public TenantSettingsDto Settings { get; init; } = new();
     public TenantBrandingDto Branding { get; init; } = new();
     public SecurityPolicyDto SecurityPolicy { get; init; } = new();
     public TenantLimitsDto Limits { get; init; } = new();
     public BillingInfoDto Billing { get; init; } = new();
-    
+
     // Features
     public Dictionary<string, object> Features { get; init; } = new();
-    
+
     // Domain management
     public List<string> AllowedDomains { get; init; } = new();
-    
+
     // Metadata
     public Dictionary<string, string> Metadata { get; init; } = new();
 }
@@ -87,31 +88,31 @@ public record RegistrationSettingsDto
     public bool RequireAdminApproval { get; set; } = false;
     public bool AllowSocialLogin { get; set; } = false;
     public List<string> SocialLoginProviders { get; set; } = new();
-    
+
     // New: Custom fields configuration
     public List<CustomFieldDto> CustomFields { get; set; } = new();
-    
+
     // New: Email templates
     public string? WelcomeEmailTemplate { get; set; }
     public string? ConfirmationEmailTemplate { get; set; }
     public string? ApprovalEmailTemplate { get; set; }
     public string? RejectionEmailTemplate { get; set; }
-    
+
     // New: Redirection settings
     public string? RegistrationSuccessUrl { get; set; }
     public string? RedirectAfterLogin { get; set; }
     public string? TermsUrl { get; set; }
     public string? PrivacyUrl { get; set; }
-    
+
     // New: Invitation settings
     public string? InvitationExpiryHours { get; set; } = "48";
     public bool AllowInvitations { get; set; } = true;
-    
+
     // New: Default settings
     public string? DefaultRole { get; set; } = "User";
     public bool AutoProvisionWorkspace { get; set; } = true;
     public bool SendWelcomeEmail { get; set; } = true;
-    
+
     // FIXED: Added missing properties that the service is trying to set
     public List<string> AvailableFeatures { get; set; } = new();
     public string? TenantName { get; set; }
@@ -120,58 +121,72 @@ public record RegistrationSettingsDto
     public string? PrimaryColor { get; set; }
     public string? LogoUrl { get; set; }
     public string? LoginBackgroundImage { get; set; }
-    
+
     // Legacy fields mapped to custom fields
-    public bool CollectPhoneNumber 
-    { 
+    public bool CollectPhoneNumber
+    {
         get => CustomFields?.Any(f => f.FieldName == "PhoneNumber") ?? false;
-        set 
+        set
         {
-            if (value && CustomFields != null && !CustomFields.Any(f => f.FieldName == "PhoneNumber"))
+            if (
+                value
+                && CustomFields != null
+                && !CustomFields.Any(f => f.FieldName == "PhoneNumber")
+            )
             {
-                CustomFields.Add(new CustomFieldDto
-                {
-                    FieldName = "PhoneNumber",
-                    FieldType = "tel",
-                    IsRequired = false,
-                    DisplayOrder = CustomFields.Count + 1
-                });
+                CustomFields.Add(
+                    new CustomFieldDto
+                    {
+                        FieldName = "PhoneNumber",
+                        FieldType = "tel",
+                        IsRequired = false,
+                        DisplayOrder = CustomFields.Count + 1,
+                    }
+                );
             }
         }
     }
-    
-    public bool CollectAddress 
-    { 
+
+    public bool CollectAddress
+    {
         get => CustomFields?.Any(f => f.FieldName == "Address") ?? false;
         set
         {
             if (value && CustomFields != null && !CustomFields.Any(f => f.FieldName == "Address"))
             {
-                CustomFields.Add(new CustomFieldDto
-                {
-                    FieldName = "Address",
-                    FieldType = "text",
-                    IsRequired = false,
-                    DisplayOrder = CustomFields.Count + 1
-                });
+                CustomFields.Add(
+                    new CustomFieldDto
+                    {
+                        FieldName = "Address",
+                        FieldType = "text",
+                        IsRequired = false,
+                        DisplayOrder = CustomFields.Count + 1,
+                    }
+                );
             }
         }
     }
-    
-    public bool CollectCompanyName 
-    { 
+
+    public bool CollectCompanyName
+    {
         get => CustomFields?.Any(f => f.FieldName == "CompanyName") ?? false;
         set
         {
-            if (value && CustomFields != null && !CustomFields.Any(f => f.FieldName == "CompanyName"))
+            if (
+                value
+                && CustomFields != null
+                && !CustomFields.Any(f => f.FieldName == "CompanyName")
+            )
             {
-                CustomFields.Add(new CustomFieldDto
-                {
-                    FieldName = "CompanyName",
-                    FieldType = "text",
-                    IsRequired = false,
-                    DisplayOrder = CustomFields.Count + 1
-                });
+                CustomFields.Add(
+                    new CustomFieldDto
+                    {
+                        FieldName = "CompanyName",
+                        FieldType = "text",
+                        IsRequired = false,
+                        DisplayOrder = CustomFields.Count + 1,
+                    }
+                );
             }
         }
     }
@@ -244,7 +259,7 @@ public record SecurityPolicyDto
     public bool EnableIpWhitelisting { get; set; } = false;
     public List<string> IpWhitelist { get; set; } = new();
     public bool RequireHttps { get; set; } = true;
-    
+
     public string? ContentSecurityPolicy { get; set; }
 }
 
@@ -317,17 +332,17 @@ public record RegistrationResult
     public string? NextStep { get; init; }
     public string? FlowType { get; init; } // "direct", "approval", "email_confirmation", "payment"
     public string? RedirectUrl { get; init; }
-    
+
     // Payment related
     public string? PaymentSessionId { get; init; }
     public string? PaymentUrl { get; init; }
-    
+
     // Quota information
     public QuotaInfoDto? QuotaInfo { get; init; }
-    
+
     // Validation errors
     public Dictionary<string, string>? ValidationErrors { get; init; }
-    
+
     // Tenant info
     public Guid? TenantId { get; init; }
     public string? TenantName { get; init; }
@@ -375,7 +390,7 @@ public enum TenantTypeDto
     Trial = 2,
     Internal = 3,
     WhiteLabel = 4,
-    System = 5
+    System = 5,
 }
 
 // New: Tenant deployment model enum for public consumption
@@ -383,7 +398,7 @@ public enum TenantDeploymentModelDto
 {
     Shared = 0,
     Dedicated = 1,
-    Isolated = 2
+    Isolated = 2,
 }
 
 // New: Tenant status enum for public consumption
@@ -394,5 +409,5 @@ public enum TenantStatusDto
     Suspended = 2,
     Pending = 3,
     Expired = 4,
-    Maintenance = 5
+    Maintenance = 5,
 }

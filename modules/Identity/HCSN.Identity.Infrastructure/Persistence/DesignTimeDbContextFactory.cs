@@ -1,7 +1,7 @@
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using System.IO;
 
 namespace HCSN.Identity.Infrastructure.Persistence
 {
@@ -18,9 +18,11 @@ namespace HCSN.Identity.Infrastructure.Persistence
 
             var builder = new DbContextOptionsBuilder<IdentityDbContext>();
             var connectionString = configuration.GetConnectionString("IdentityConnection");
-            
-            builder.UseSqlServer(connectionString, 
-                b => b.MigrationsAssembly("HCSN.Identity.Infrastructure"));
+
+            builder.UseSqlServer(
+                connectionString,
+                b => b.MigrationsAssembly("HCSN.Identity.Infrastructure")
+            );
 
             return new IdentityDbContext(builder.Options);
         }

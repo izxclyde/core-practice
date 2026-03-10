@@ -8,16 +8,17 @@ namespace HCSN.Identity.Domain.Entities;
 public class User
 {
     private User() { } // For EF Core
-    
+
     public User(
-        string email, 
-        string phoneNumber, 
-        string firstName, 
-        string lastName, 
-        List<string>? accessibleSystems = null, 
+        string email,
+        string phoneNumber,
+        string firstName,
+        string lastName,
+        List<string>? accessibleSystems = null,
         Guid? tenantId = null,
         string? invitedBy = null,
-        UserType userType = UserType.Regular)
+        UserType userType = UserType.Regular
+    )
     {
         Id = Guid.NewGuid();
         Email = email ?? throw new ArgumentNullException(nameof(email));
@@ -42,7 +43,7 @@ public class User
         _permissions = new List<string>();
         _deviceTokens = new List<string>();
     }
-    
+
     // Core Properties
     public Guid Id { get; private set; }
     public string Email { get; private set; }
@@ -52,7 +53,7 @@ public class User
     public string FullName => $"{FirstName} {LastName}";
     public UserStatus Status { get; private set; }
     public UserType UserType { get; private set; }
-    
+
     // Authentication
     public string? PasswordHash { get; private set; }
     public string? RefreshToken { get; private set; }
@@ -60,7 +61,7 @@ public class User
     public bool TwoFactorEnabled { get; private set; }
     public string? TwoFactorSecret { get; private set; }
     public List<string> TwoFactorRecoveryCodes { get; private set; } = new();
-    
+
     // Security
     public int LoginAttempts { get; private set; }
     public DateTime? LockoutEnd { get; private set; }
@@ -68,7 +69,7 @@ public class User
     public string? LastLoginIp { get; private set; }
     public string? LastLoginUserAgent { get; private set; }
     public List<string> KnownDevices { get; private set; } = new();
-    
+
     // Confirmation Status
     public bool EmailConfirmed { get; private set; }
     public DateTime? EmailConfirmedAt { get; private set; }
@@ -78,65 +79,65 @@ public class User
     public DateTime? TermsAcceptedAt { get; private set; }
     public bool PrivacyAccepted { get; private set; }
     public DateTime? PrivacyAcceptedAt { get; private set; }
-    
+
     // Timestamps
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
     public DateTime? DeletedAt { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
     public DateTime? LastActivityAt { get; private set; }
-    
+
     // Status
     public bool IsActive { get; private set; }
     public bool IsLocked => LockoutEnd.HasValue && LockoutEnd > DateTime.UtcNow;
-    
+
     // Tenant Relationship
     public Guid? TenantId { get; private set; }
     public Tenant? Tenant { get; private set; }
     public bool IsTenantAdmin { get; private set; }
     public DateTime? TenantAdminAssignedAt { get; private set; }
-    
+
     // Access Control
     public List<string> AccessibleSystems { get; private set; }
     private List<string> _roles;
     public IReadOnlyList<string> Roles => _roles.AsReadOnly();
-    
+
     private List<string> _permissions;
     public IReadOnlyList<string> Permissions => _permissions.AsReadOnly();
-    
+
     // Invitation Tracking
     public string? InvitedBy { get; private set; }
     public DateTime? InvitationSentAt { get; private set; }
     public DateTime? InvitationAcceptedAt { get; private set; }
     public string? InvitationToken { get; private set; }
-    
+
     // Flexible Data Storage
     private Dictionary<string, object>? _customData;
     public IReadOnlyDictionary<string, object>? CustomData => _customData;
-    
+
     private Dictionary<string, string>? _metadata;
     public IReadOnlyDictionary<string, string>? Metadata => _metadata;
-    
+
     // Device Management
     private List<string> _deviceTokens;
     public IReadOnlyList<string> DeviceTokens => _deviceTokens.AsReadOnly();
-    
+
     // Preferences
     public string? PreferredLanguage { get; private set; }
     public string? PreferredTheme { get; private set; }
     public bool EmailNotifications { get; private set; } = true;
     public bool PushNotifications { get; private set; } = true;
     public string? Timezone { get; private set; }
-    
+
     // Rejection tracking
     private string? _rejectionReason;
     public string? RejectionReason => _rejectionReason;
     public DateTime? RejectedAt { get; private set; }
-    
+
     // Approval tracking
     public string? ApprovedBy { get; private set; }
     public DateTime? ApprovedAt { get; private set; }
-    
+
     // Password Management
     public void SetPassword(string passwordHash)
     {
@@ -144,12 +145,12 @@ public class User
         LastPasswordChangedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public bool ValidatePassword(string password, IPasswordHasher hasher)
     {
         return hasher.Verify(PasswordHash, password);
     }
-    
+
     // Email Confirmation
     public void ConfirmEmail()
     {
@@ -157,7 +158,7 @@ public class User
         EmailConfirmedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Phone Confirmation
     public void ConfirmPhone()
     {
@@ -165,7 +166,7 @@ public class User
         PhoneConfirmedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Token Management
     public void UpdateRefreshToken(string refreshToken, DateTime expiryTime)
     {
@@ -173,14 +174,14 @@ public class User
         RefreshTokenExpiryTime = expiryTime;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void ClearRefreshToken()
     {
         RefreshToken = null;
         RefreshTokenExpiryTime = null;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Two Factor Authentication
     public void EnableTwoFactor(string secret)
     {
@@ -188,22 +189,23 @@ public class User
         TwoFactorSecret = secret;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void DisableTwoFactor()
     {
         TwoFactorEnabled = false;
         TwoFactorSecret = null;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void GenerateTwoFactorRecoveryCodes(int count = 10)
     {
-        TwoFactorRecoveryCodes = Enumerable.Range(0, count)
+        TwoFactorRecoveryCodes = Enumerable
+            .Range(0, count)
             .Select(_ => GenerateRecoveryCode())
             .ToList();
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Access Control
     public void AddAccessibleSystem(string systemName)
     {
@@ -213,7 +215,7 @@ public class User
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public void RemoveAccessibleSystem(string systemName)
     {
         if (AccessibleSystems.Contains(systemName))
@@ -222,12 +224,12 @@ public class User
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public bool HasAccessToSystem(string systemName)
     {
         return IsActive && AccessibleSystems.Contains(systemName);
     }
-    
+
     // Role Management
     public void AddRole(string role)
     {
@@ -237,7 +239,7 @@ public class User
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public void RemoveRole(string role)
     {
         if (_roles.Contains(role))
@@ -246,12 +248,12 @@ public class User
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public bool HasRole(string role)
     {
         return _roles.Contains(role);
     }
-    
+
     // Permission Management
     public void AddPermission(string permission)
     {
@@ -261,7 +263,7 @@ public class User
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public void RemovePermission(string permission)
     {
         if (_permissions.Contains(permission))
@@ -270,12 +272,12 @@ public class User
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public bool HasPermission(string permission)
     {
         return _permissions.Contains(permission);
     }
-    
+
     // Status Management
     public void Activate()
     {
@@ -283,14 +285,14 @@ public class User
         Status = UserStatus.Active;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void Deactivate()
     {
         IsActive = false;
         Status = UserStatus.Inactive;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void SoftDelete()
     {
         IsActive = false;
@@ -298,14 +300,14 @@ public class User
         DeletedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void Suspend()
     {
         Status = UserStatus.Suspended;
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Login Tracking
     public void UpdateLastLogin(string? ipAddress = null, string? userAgent = null)
     {
@@ -316,72 +318,72 @@ public class User
         LoginAttempts = 0; // Reset on successful login
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void RecordActivity()
     {
         LastActivityAt = DateTime.UtcNow;
     }
-    
+
     // Lockout Management
     public void IncrementLoginAttempts()
     {
         LoginAttempts++;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void ResetLoginAttempts()
     {
         LoginAttempts = 0;
         LockoutEnd = null;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void LockUntil(DateTime lockoutEnd)
     {
         LockoutEnd = lockoutEnd;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Tenant Admin Management
-    public void MakeTenantAdmin(string? assignedBy = null) 
-    { 
+    public void MakeTenantAdmin(string? assignedBy = null)
+    {
         IsTenantAdmin = true;
         TenantAdminAssignedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-    
-    public void RemoveTenantAdmin() 
-    { 
+
+    public void RemoveTenantAdmin()
+    {
         IsTenantAdmin = false;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Approval Flow
-    public void SetPendingApproval() 
-    { 
+    public void SetPendingApproval()
+    {
         Status = UserStatus.PendingApproval;
         IsActive = false;
         UpdatedAt = DateTime.UtcNow;
     }
-    
-    public void Approve(string? approvedBy = null) 
-    { 
+
+    public void Approve(string? approvedBy = null)
+    {
         Status = UserStatus.Active;
         IsActive = true;
         ApprovedBy = approvedBy;
         ApprovedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-    
-    public void Reject(string reason) 
-    { 
+
+    public void Reject(string reason)
+    {
         Status = UserStatus.Rejected;
         IsActive = false;
         _rejectionReason = reason;
         RejectedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Invitation Flow
     public void SendInvitation(string invitedBy, string token)
     {
@@ -391,7 +393,7 @@ public class User
         Status = UserStatus.Invited;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void AcceptInvitation()
     {
         InvitationAcceptedAt = DateTime.UtcNow;
@@ -399,7 +401,7 @@ public class User
         Status = UserStatus.Active;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Terms and Privacy
     public void AcceptTerms()
     {
@@ -407,28 +409,28 @@ public class User
         TermsAcceptedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void AcceptPrivacy()
     {
         PrivacyAccepted = true;
         PrivacyAcceptedAt = DateTime.UtcNow;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Custom Data Management
     public void SetCustomData(Dictionary<string, object> data)
     {
         _customData = data ?? new Dictionary<string, object>();
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void UpdateCustomData(string key, object value)
     {
         _customData ??= new Dictionary<string, object>();
         _customData[key] = value;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public T? GetCustomData<T>(string key)
     {
         if (_customData != null && _customData.TryGetValue(key, out var value))
@@ -444,8 +446,8 @@ public class User
         }
         return default;
     }
-    
-        // Metadata Management
+
+    // Metadata Management
     public void SetMetadata(string key, string? value)
     {
         if (string.IsNullOrEmpty(value))
@@ -455,7 +457,7 @@ public class User
         _metadata[key] = value;
         UpdatedAt = DateTime.UtcNow;
     }
-        
+
     public string? GetMetadata(string key)
     {
         return _metadata?.GetValueOrDefault(key);
@@ -465,18 +467,21 @@ public class User
     public T? GetMetadata<T>(string key)
     {
         var value = GetMetadata(key);
-        if (value == null) return default;
-        
+        if (value == null)
+            return default;
+
         try
         {
             // Handle JSON serialized objects
-            if (typeof(T) == typeof(Dictionary<string, object>) || 
-                typeof(T) == typeof(Dictionary<string, string>) ||
-                typeof(T).IsClass && typeof(T) != typeof(string))
+            if (
+                typeof(T) == typeof(Dictionary<string, object>)
+                || typeof(T) == typeof(Dictionary<string, string>)
+                || typeof(T).IsClass && typeof(T) != typeof(string)
+            )
             {
                 return System.Text.Json.JsonSerializer.Deserialize<T>(value);
             }
-            
+
             // Handle primitive types
             return (T)Convert.ChangeType(value, typeof(T));
         }
@@ -494,9 +499,9 @@ public class User
             _metadata?.Remove(key);
             return;
         }
-        
+
         _metadata ??= new Dictionary<string, string>();
-        
+
         if (value is string strValue)
         {
             _metadata[key] = strValue;
@@ -505,10 +510,10 @@ public class User
         {
             _metadata[key] = System.Text.Json.JsonSerializer.Serialize(value);
         }
-        
+
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Device Management
     public void AddDeviceToken(string deviceToken)
     {
@@ -518,7 +523,7 @@ public class User
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public void RemoveDeviceToken(string deviceToken)
     {
         if (_deviceTokens.Contains(deviceToken))
@@ -527,24 +532,27 @@ public class User
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     // Known Devices
     public void AddKnownDevice(string deviceIdentifier)
     {
-        if (!string.IsNullOrWhiteSpace(deviceIdentifier) && !KnownDevices.Contains(deviceIdentifier))
+        if (
+            !string.IsNullOrWhiteSpace(deviceIdentifier) && !KnownDevices.Contains(deviceIdentifier)
+        )
         {
             KnownDevices.Add(deviceIdentifier);
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     // Preferences
     public void UpdatePreferences(
-        string? language = null, 
-        string? theme = null, 
+        string? language = null,
+        string? theme = null,
         bool? emailNotifications = null,
         bool? pushNotifications = null,
-        string? timezone = null)
+        string? timezone = null
+    )
     {
         PreferredLanguage = language ?? PreferredLanguage;
         PreferredTheme = theme ?? PreferredTheme;
@@ -553,17 +561,22 @@ public class User
         Timezone = timezone ?? Timezone;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Helper Methods
     public bool IsPendingApproval() => Status == UserStatus.PendingApproval;
+
     public bool IsRejected() => Status == UserStatus.Rejected;
+
     public bool IsInvited() => Status == UserStatus.Invited;
+
     public bool IsSuspended() => Status == UserStatus.Suspended;
+
     public bool IsDeleted() => Status == UserStatus.Deleted;
-    
+
     private string GenerateRecoveryCode()
     {
-        return Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+        return Convert
+            .ToBase64String(Guid.NewGuid().ToByteArray())
             .Replace("/", "")
             .Replace("+", "")
             .Substring(0, 8)
@@ -580,7 +593,7 @@ public enum UserStatus
     PendingApproval,
     Rejected,
     Invited,
-    Locked
+    Locked,
 }
 
 public enum UserType
@@ -590,5 +603,5 @@ public enum UserType
     SuperAdmin,
     Service,
     Api,
-    Guest
+    Guest,
 }

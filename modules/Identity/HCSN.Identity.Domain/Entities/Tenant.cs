@@ -1,46 +1,50 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Linq;
+using System.Text.Json;
 
 namespace HCSN.Identity.Domain.Entities;
-    public enum TenantType
-    {
-        Standard = 0,      // Regular SaaS tenant
-        Enterprise = 1,     // Enterprise with custom features
-        Trial = 2,         // Trial/Free tier
-        Internal = 3,       // Internal system (admin, etc.)
-        WhiteLabel = 4,     // White-labeled solution
-        System = 5         // System tenant (for platform services)
-    }
-    
-    // Deployment Model (matches our discussion!)
-    public enum TenantDeploymentModel
-    {
-        Shared = 0,        // Uses tenant-base template (Scenario 1)
-        Dedicated = 1,     // Has its own custom system (Scenario 2)
-        Isolated = 2       // Fully isolated (separate infrastructure)
-    }
-    
-    public enum TenantStatus
-    {
-        Active = 0,
-        Inactive = 1,
-        Suspended = 2,
-        Pending = 3,
-        Expired = 4,
-        Maintenance = 5
-    }
+
+public enum TenantType
+{
+    Standard = 0, // Regular SaaS tenant
+    Enterprise = 1, // Enterprise with custom features
+    Trial = 2, // Trial/Free tier
+    Internal = 3, // Internal system (admin, etc.)
+    WhiteLabel = 4, // White-labeled solution
+    System = 5, // System tenant (for platform services)
+}
+
+// Deployment Model (matches our discussion!)
+public enum TenantDeploymentModel
+{
+    Shared = 0, // Uses tenant-base template (Scenario 1)
+    Dedicated = 1, // Has its own custom system (Scenario 2)
+    Isolated = 2, // Fully isolated (separate infrastructure)
+}
+
+public enum TenantStatus
+{
+    Active = 0,
+    Inactive = 1,
+    Suspended = 2,
+    Pending = 3,
+    Expired = 4,
+    Maintenance = 5,
+}
+
 public class Tenant
 {
     private Tenant() { } // For EF Core
-        // Tenant Type Classification
+
+    // Tenant Type Classification
     public Tenant(
-        string name, 
-        string subdomain, 
+        string name,
+        string subdomain,
         string? connectionString = null,
         TenantType type = TenantType.Standard,
-        TenantDeploymentModel deploymentModel = TenantDeploymentModel.Shared)
+        TenantDeploymentModel deploymentModel = TenantDeploymentModel.Shared
+    )
     {
         Id = Guid.NewGuid();
         Name = name ?? throw new ArgumentNullException(nameof(name));
@@ -60,7 +64,7 @@ public class Tenant
         AllowedDomains = new List<string>();
         CreatedAt = DateTime.UtcNow;
     }
-    
+
     // Core Properties
     public Guid Id { get; private set; }
     public string Name { get; private set; }
@@ -76,29 +80,29 @@ public class Tenant
     public DateTime? DeletedAt { get; private set; }
     public DateTime? LastActiveAt { get; private set; }
     public string? Notes { get; private set; }
-    
 
-    
     // Enhanced Features Dictionary (supports any type of feature)
     public Dictionary<string, object> Features { get; private set; }
     public virtual ICollection<Invoice> Invoices { get; private set; } = new List<Invoice>();
+
     // Comprehensive Settings
     public TenantSettings Settings { get; private set; }
     public TenantBranding Branding { get; private set; }
     public SecurityPolicy SecurityPolicy { get; private set; }
     public TenantLimits Limits { get; private set; }
     public BillingInfo Billing { get; private set; }
-    
+
     // Flexible Metadata
     public Dictionary<string, string> Metadata { get; private set; }
-    
+
     // Domain Management
     public List<string> AllowedDomains { get; private set; }
-    
+
     // Navigation Properties
     public virtual ICollection<User> Users { get; private set; } = new List<User>();
-    public virtual ICollection<TenantModule> Modules { get; private set; } = new List<TenantModule>();
-    
+    public virtual ICollection<TenantModule> Modules { get; private set; } =
+        new List<TenantModule>();
+
     // Feature Management
     public void EnableFeature(string featureKey, object? configuration = null)
     {
@@ -108,7 +112,7 @@ public class Tenant
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public void DisableFeature(string featureKey)
     {
         if (Features.ContainsKey(featureKey))
@@ -117,12 +121,12 @@ public class Tenant
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public bool HasFeature(string featureKey)
     {
         return Features.ContainsKey(featureKey);
     }
-    
+
     public T? GetFeatureConfiguration<T>(string featureKey)
     {
         if (Features.TryGetValue(featureKey, out var config))
@@ -138,20 +142,20 @@ public class Tenant
         }
         return default;
     }
-    
+
     // Domain Management
     public void AddAllowedDomain(string domain)
     {
         if (string.IsNullOrWhiteSpace(domain))
             throw new ArgumentException("Domain cannot be empty", nameof(domain));
-            
+
         if (!AllowedDomains.Contains(domain))
         {
             AllowedDomains.Add(domain);
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public void RemoveAllowedDomain(string domain)
     {
         if (AllowedDomains.Contains(domain))
@@ -160,83 +164,85 @@ public class Tenant
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public bool IsDomainAllowed(string domain)
     {
-        return AllowedDomains.Count == 0 || AllowedDomains.Any(d => 
-            d.Equals(domain, StringComparison.OrdinalIgnoreCase) ||
-            (d.StartsWith("*.") && domain.EndsWith(d.Substring(2))));
+        return AllowedDomains.Count == 0
+            || AllowedDomains.Any(d =>
+                d.Equals(domain, StringComparison.OrdinalIgnoreCase)
+                || (d.StartsWith("*.") && domain.EndsWith(d.Substring(2)))
+            );
     }
-    
+
     // Custom Domain
     public void SetCustomDomain(string? customDomain)
     {
         CustomDomain = customDomain;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Status Management
-    public void Activate() 
-    { 
+    public void Activate()
+    {
         Status = TenantStatus.Active;
         UpdatedAt = DateTime.UtcNow;
     }
-    
-    public void Deactivate() 
-    { 
+
+    public void Deactivate()
+    {
         Status = TenantStatus.Inactive;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void Suspend(string? reason = null)
     {
         Status = TenantStatus.Suspended;
         Notes = reason;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void MarkAsActive()
     {
         LastActiveAt = DateTime.UtcNow;
     }
-    
+
     // Configuration Methods
     public void UpdateSettings(TenantSettings settings)
     {
         Settings = settings ?? throw new ArgumentNullException(nameof(settings));
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void UpdateBranding(TenantBranding branding)
     {
         Branding = branding ?? throw new ArgumentNullException(nameof(branding));
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void UpdateSecurityPolicy(SecurityPolicy policy)
     {
         SecurityPolicy = policy ?? throw new ArgumentNullException(nameof(policy));
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void UpdateLimits(TenantLimits limits)
     {
         Limits = limits ?? throw new ArgumentNullException(nameof(limits));
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void UpdateBilling(BillingInfo billing)
     {
         Billing = billing ?? throw new ArgumentNullException(nameof(billing));
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     public void AddMetadata(string key, string value)
     {
         Metadata[key] = value;
         UpdatedAt = DateTime.UtcNow;
     }
-    
+
     // Module Management
     public void AddModule(TenantModule module)
     {
@@ -246,7 +252,7 @@ public class Tenant
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     public void RemoveModule(string moduleCode)
     {
         var module = Modules.FirstOrDefault(m => m.ModuleCode == moduleCode);
@@ -256,18 +262,18 @@ public class Tenant
             UpdatedAt = DateTime.UtcNow;
         }
     }
-    
+
     // Validation
     public bool CanAddMoreUsers()
     {
         return Limits.MaxUsers == null || Users.Count < Limits.MaxUsers;
     }
-    
+
     public bool CanUseFeature(string featureKey)
     {
         return HasFeature(featureKey) && Status == TenantStatus.Active;
     }
-    
+
     // Helper Methods
     public string GetDeploymentPath()
     {
@@ -276,15 +282,13 @@ public class Tenant
             TenantDeploymentModel.Shared => "tenant-base",
             TenantDeploymentModel.Dedicated => $"tenant-{Subdomain}",
             TenantDeploymentModel.Isolated => $"isolated-{Subdomain}",
-            _ => "tenant-base"
+            _ => "tenant-base",
         };
     }
-    
+
     public string GetFullDomain()
     {
-        return !string.IsNullOrEmpty(CustomDomain) 
-            ? CustomDomain 
-            : $"{Subdomain}.hcsn.com";
+        return !string.IsNullOrEmpty(CustomDomain) ? CustomDomain : $"{Subdomain}.hcsn.com";
     }
 }
 
@@ -296,7 +300,7 @@ public class RegistrationSettings
         SocialLoginProviders = new List<string>();
         CustomFields = new List<CustomField>();
     }
-    
+
     public bool AllowPublicRegistration { get; set; } = true;
     public bool RequireEmailConfirmation { get; set; } = true;
     public bool RequireAdminApproval { get; set; } = false;
@@ -323,8 +327,8 @@ public class CustomField
     public int DisplayOrder { get; set; }
     public string? ValidationRegex { get; set; }
     public string? ErrorMessage { get; set; }
-    
-    public string? Placeholder { get; set; }  // ADD THIS LINE
+
+    public string? Placeholder { get; set; } // ADD THIS LINE
 
     public Dictionary<string, object>? Metadata { get; init; } // Additional field metadata
 }
@@ -461,13 +465,16 @@ public static class TenantExtensions
     {
         return query.Where(t => t.Status == TenantStatus.Active);
     }
-    
+
     public static IQueryable<Tenant> OfType(this IQueryable<Tenant> query, TenantType type)
     {
         return query.Where(t => t.Type == type);
     }
-    
-    public static IQueryable<Tenant> WithDeploymentModel(this IQueryable<Tenant> query, TenantDeploymentModel model)
+
+    public static IQueryable<Tenant> WithDeploymentModel(
+        this IQueryable<Tenant> query,
+        TenantDeploymentModel model
+    )
     {
         return query.Where(t => t.DeploymentModel == model);
     }

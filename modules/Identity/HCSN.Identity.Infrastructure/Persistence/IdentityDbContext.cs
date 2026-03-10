@@ -1,6 +1,6 @@
-using Microsoft.EntityFrameworkCore;
-using HCSN.Identity.Domain.Entities;
 using System.Text.Json;
+using HCSN.Identity.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,9 +9,7 @@ namespace HCSN.Identity.Infrastructure.Persistence;
 public class IdentityDbContext : DbContext
 {
     public IdentityDbContext(DbContextOptions<IdentityDbContext> options)
-        : base(options)
-    {
-    }
+        : base(options) { }
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -24,26 +22,38 @@ public class IdentityDbContext : DbContext
 
         var jsonOptions = new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
 
-        static ValueComparer<T> BuildJsonValueComparer<T>() where T : class, new()
-            => new(
-                (left, right) => JsonSerializer.Serialize(left, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(right, (JsonSerializerOptions?)null),
-                value => JsonSerializer.Serialize(value, (JsonSerializerOptions?)null).GetHashCode(),
-                value => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null) ?? new T());
+        static ValueComparer<T> BuildJsonValueComparer<T>()
+            where T : class, new() =>
+            new(
+                (left, right) =>
+                    JsonSerializer.Serialize(left, (JsonSerializerOptions?)null)
+                    == JsonSerializer.Serialize(right, (JsonSerializerOptions?)null),
+                value =>
+                    JsonSerializer.Serialize(value, (JsonSerializerOptions?)null).GetHashCode(),
+                value =>
+                    JsonSerializer.Deserialize<T>(
+                        JsonSerializer.Serialize(value, (JsonSerializerOptions?)null),
+                        (JsonSerializerOptions?)null
+                    ) ?? new T()
+            );
 
         static PropertyBuilder<TProperty> ConfigureJsonProperty<TProperty>(
             PropertyBuilder<TProperty> property,
             JsonSerializerOptions options,
-            ValueComparer<TProperty>? comparer = null)
+            ValueComparer<TProperty>? comparer = null
+        )
             where TProperty : class, new()
         {
             property
                 .HasColumnType("nvarchar(max)")
                 .HasConversion(
                     value => JsonSerializer.Serialize(value, options),
-                    value => JsonSerializer.Deserialize<TProperty>(value, options) ?? new TProperty());
+                    value =>
+                        JsonSerializer.Deserialize<TProperty>(value, options) ?? new TProperty()
+                );
 
             property.Metadata.SetValueComparer(comparer ?? BuildJsonValueComparer<TProperty>());
             return property;
@@ -56,7 +66,8 @@ public class IdentityDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
 
-            entity.HasOne(e => e.Tenant)
+            entity
+                .HasOne(e => e.Tenant)
                 .WithMany(t => t.Invoices)
                 .HasForeignKey(e => e.TenantId)
                 .OnDelete(DeleteBehavior.Cascade);
@@ -96,12 +107,14 @@ public class IdentityDbContext : DbContext
             ConfigureJsonProperty(entity.Property(e => e.Metadata), jsonOptions);
 
             // Relationships
-            entity.HasMany(e => e.Users)
+            entity
+                .HasMany(e => e.Users)
                 .WithOne(u => u.Tenant)
                 .HasForeignKey(u => u.TenantId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasMany(e => e.Modules)
+            entity
+                .HasMany(e => e.Modules)
                 .WithOne()
                 .HasForeignKey("TenantId")
                 .OnDelete(DeleteBehavior.Cascade);
@@ -129,9 +142,15 @@ public class IdentityDbContext : DbContext
             ConfigureJsonProperty(entity.Property(e => e.KnownDevices), jsonOptions);
             ConfigureJsonProperty(entity.Property(e => e.TwoFactorRecoveryCodes), jsonOptions);
 
-            ConfigureJsonProperty(entity.Property<Dictionary<string, object>>("_customData"), jsonOptions)
+            ConfigureJsonProperty(
+                    entity.Property<Dictionary<string, object>>("_customData"),
+                    jsonOptions
+                )
                 .HasColumnName("CustomData");
-            ConfigureJsonProperty(entity.Property<Dictionary<string, string>>("_metadata"), jsonOptions)
+            ConfigureJsonProperty(
+                    entity.Property<Dictionary<string, string>>("_metadata"),
+                    jsonOptions
+                )
                 .HasColumnName("Metadata");
             ConfigureJsonProperty(entity.Property<List<string>>("_roles"), jsonOptions)
                 .HasColumnName("Roles");
@@ -142,7 +161,8 @@ public class IdentityDbContext : DbContext
 
             entity.HasQueryFilter(e => e.DeletedAt == null);
 
-            entity.HasOne(u => u.Tenant)
+            entity
+                .HasOne(u => u.Tenant)
                 .WithMany(t => t.Users)
                 .HasForeignKey(u => u.TenantId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -170,8 +190,7 @@ public class IdentityDbContext : DbContext
 
     private void UpdateTimestamps()
     {
-        var entries = ChangeTracker.Entries()
-            .Where(e => e.Entity is User || e.Entity is Tenant);
+        var entries = ChangeTracker.Entries().Where(e => e.Entity is User || e.Entity is Tenant);
 
         foreach (var entry in entries)
         {

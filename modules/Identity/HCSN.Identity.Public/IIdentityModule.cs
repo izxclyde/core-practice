@@ -16,8 +16,24 @@ public interface IIdentityModule
 }
 
 public record LoginRequest(string Username, string Password, bool RememberMe = false);
-public record RegisterRequest(string Email, string PhoneNumber, string FirstName, string LastName, string Password, List<string>? AccessibleSystems = null);
-public record AuthResult(bool Success, string? Token, string? RefreshToken, UserDto? User, string? Error);
+
+public record RegisterRequest(
+    string Email,
+    string PhoneNumber,
+    string FirstName,
+    string LastName,
+    string Password,
+    List<string>? AccessibleSystems = null
+);
+
+public record AuthResult(
+    bool Success,
+    string? Token,
+    string? RefreshToken,
+    UserDto? User,
+    string? Error
+);
+
 public record UserDto(
     Guid Id,
     string Email,

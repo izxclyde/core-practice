@@ -1,9 +1,9 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using HCSN.Identity.Domain.Interfaces;
 using HCSN.Identity.Public;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 
 namespace HCSN.Identity.Infrastructure.Services;
 
@@ -12,25 +12,26 @@ public class TenantService : ITenantService
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ITenantRepository _tenantRepository;
     private readonly IUserRepository _userRepository;
-    
+
     public TenantService(
         IHttpContextAccessor httpContextAccessor,
         ITenantRepository tenantRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository
+    )
     {
         _httpContextAccessor = httpContextAccessor;
         _tenantRepository = tenantRepository;
         _userRepository = userRepository;
     }
-    
+
     public Guid? GetCurrentTenantId()
     {
         if (_httpContextAccessor.HttpContext?.Items["TenantId"] is Guid tenantId)
             return tenantId;
-            
+
         return null;
     }
-    
+
     public async Task<TenantInfo?> GetCurrentTenantAsync()
     {
         var tenantId = GetCurrentTenantId();
@@ -43,20 +44,17 @@ public class TenantService : ITenantService
 
         var features = tenant.Features?.Keys.ToList() ?? new List<string>();
 
-        return new TenantInfo(
-            tenant.Id,
-            tenant.Name,
-            tenant.Subdomain,
-            features
-        );
+        return new TenantInfo(tenant.Id, tenant.Name, tenant.Subdomain, features);
     }
-    
+
     public async Task<bool> CurrentUserHasAccessToTenantAsync(Guid tenantId)
     {
-        var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var userIdClaim = _httpContextAccessor
+            .HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)
+            ?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             return false;
-            
+
         var user = await _userRepository.GetByIdAsync(userId);
         return user != null && user.TenantId == tenantId;
     }

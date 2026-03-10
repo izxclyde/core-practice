@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HCSN.Identity.Application.Interfaces; // Change this to Application.Interfaces
 using HCSN.Identity.Domain.Entities;
-using HCSN.Identity.Application.Interfaces;  // Change this to Application.Interfaces
+
 // Remove: using HCSN.Identity.Domain.Interfaces;
 
 namespace HCSN.Identity.Infrastructure.Services;
 
-public class FeatureService : IFeatureService  // Now implements from Application.Interfaces
+public class FeatureService : IFeatureService // Now implements from Application.Interfaces
 {
     public bool IsFeatureAvailableForNewUsers(string feature, Tenant tenant)
     {
@@ -18,34 +19,34 @@ public class FeatureService : IFeatureService  // Now implements from Applicatio
             return value switch
             {
                 bool boolValue => boolValue,
-                string strValue => !string.IsNullOrEmpty(strValue) && 
-                                   strValue != "false" && 
-                                   strValue != "0",
+                string strValue => !string.IsNullOrEmpty(strValue)
+                    && strValue != "false"
+                    && strValue != "0",
                 int intValue => intValue > 0,
                 long longValue => longValue > 0,
-                _ => false
+                _ => false,
             };
         }
-        
+
         // Check limits if applicable
         if (tenant.Limits?.AllowedFeatures?.Contains(feature) == true)
         {
             return true;
         }
-        
+
         // Check if it's a built-in feature
         if (IsBuiltInFeature(feature))
         {
             return true;
         }
-        
+
         return false;
     }
-    
+
     public List<string> GetEnabledFeatures(Tenant tenant)
     {
         var features = new List<string>();
-        
+
         if (tenant.Features != null)
         {
             foreach (var feature in tenant.Features)
@@ -56,15 +57,15 @@ public class FeatureService : IFeatureService  // Now implements from Applicatio
                 }
             }
         }
-        
+
         if (tenant.Limits?.AllowedFeatures != null)
         {
             features.AddRange(tenant.Limits.AllowedFeatures);
         }
-        
+
         return features.Distinct().ToList();
     }
-    
+
     // Add this if your IFeatureService interface requires it
     public bool IsBuiltInFeature(string feature)
     {
@@ -81,7 +82,7 @@ public class FeatureService : IFeatureService  // Now implements from Applicatio
             "audit-logs" => true,
             "user-management" => true,
             "role-management" => true,
-            _ => false
+            _ => false,
         };
     }
 }
